@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yango Nepal – Driver Support Bot</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&family=Rajdhani:wght@500;700&display=swap');
+
+  :root {
+    --yango-red: #FF1744;
+    --yango-dark: #0D0D0D;
+    --yango-card: #161616;
+    --yango-border: #2a2a2a;
+    --yango-accent: #FF4D6D;
+    --yango-muted: #555;
+    --yango-light: #e8e8e8;
+    --yango-green: #00E676;
+    --yango-yellow: #FFD600;
+    --bubble-bot: #1e1e1e;
+    --bubble-user: #FF1744;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--yango-dark);
+    color: var(--yango-light);
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Header */
+  .header {
+    width: 100%;
+    max-width: 480px;
+    background: linear-gradient(135deg, #1a0005 0%, #0D0D0D 60%);
+    border-bottom: 2px solid var(--yango-red);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 4px 20px rgba(255,23,68,0.2);
+  }
+
+  .header-logo {
+    width: 42px;
+    height: 42px;
+    background: var(--yango-red);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: white;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+    box-shadow: 0 0 15px rgba(255,23,68,0.5);
+  }
+
+  .header-info { flex: 1; }
+  .header-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0.5px;
+  }
+  .header-sub {
+    font-size: 11px;
+    color: var(--yango-green);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 1px;
+  }
+  .status-dot {
+    width: 7px; height: 7px;
+    background: var(--yango-green);
+    border-radius: 50%;
+    animation: pulse 1.8s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* Chat window */
+  .chat-window {
+    width: 100%;
+    max-width: 480px;
+    flex: 1;
+    padding: 16px 14px 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: calc(100vh - 140px);
+    max-height: calc(100vh - 140px);
+  }
+
+  /* Bubbles */
+  .bubble-wrap {
+    display: flex;
+    gap: 8px;
+    animation: fadeUp 0.3s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .bubble-wrap.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    align-self: flex-end;
+  }
+  .avatar.bot { background: #2a0008; border: 1.5px solid var(--yango-red); font-size: 16px; }
+  .avatar.user { background: #1a1a1a; border: 1.5px solid #444; }
+
+  .bubble {
+    max-width: 82%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 13.5px;
+    line-height: 1.65;
+  }
+  .bubble.bot {
+    background: var(--bubble-bot);
+    border: 1px solid var(--yango-border);
+    border-bottom-left-radius: 4px;
+    color: #ddd;
+  }
+  .bubble.user {
+    background: var(--bubble-user);
+    border-bottom-right-radius: 4px;
+    color: white;
+    font-weight: 500;
+  }
+
+  .bubble b { color: var(--yango-yellow); }
+  .bubble .tag {
+    display: inline-block;
+    background: rgba(255,23,68,0.15);
+    border: 1px solid rgba(255,23,68,0.4);
+    color: var(--yango-accent);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin: 3px 2px;
+  }
+  .bubble .ok { color: var(--yango-green); font-weight: 600; }
+  .bubble .warn { color: var(--yango-yellow); font-weight: 600; }
+  .bubble .bad { color: var(--yango-red); font-weight: 600; }
+
+  /* Quick reply chips */
+  .chips-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 4px 0 4px 40px;
+    animation: fadeUp 0.4s ease;
+  }
+  .chip {
+    background: #1a1a1a;
+    border: 1.5px solid var(--yango-border);
+    color: #ccc;
+    padding: 7px 13px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1.4;
+  }
+  .chip:hover, .chip:active {
+    border-color: var(--yango-red);
+    color: white;
+    background: rgba(255,23,68,0.1);
+  }
+
+  /* Input area */
+  .input-area {
+    width: 100%;
+    max-width: 480px;
+    padding: 10px 12px;
+    background: #111;
+    border-top: 1px solid var(--yango-border);
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    position: sticky;
+    bottom: 0;
+  }
+  .input-area textarea {
+    flex: 1;
+    background: #1c1c1c;
+    border: 1.5px solid var(--yango-border);
+    border-radius: 20px;
+    color: white;
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    font-size: 13px;
+    padding: 9px 14px;
+    resize: none;
+    outline: none;
+    max-height: 80px;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+  }
+  .input-area textarea:focus { border-color: var(--yango-red); }
+  .input-area textarea::placeholder { color: #555; }
+
+  .send-btn {
+    width: 40px; height: 40px;
+    background: var(--yango-red);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.15s, background 0.2s;
+    box-shadow: 0 2px 10px rgba(255,23,68,0.4);
+  }
+  .send-btn:hover { transform: scale(1.08); background: #ff3355; }
+  .send-btn:active { transform: scale(0.95); }
+
+  /* Typing indicator */
+  .typing {
+    display: flex; gap: 5px; align-items: center; padding: 10px 14px;
+    background: var(--bubble-bot); border: 1px solid var(--yango-border);
+    border-radius: 16px; border-bottom-left-radius: 4px;
+    width: fit-content; max-width: 80px;
+  }
+  .typing span {
+    width: 7px; height: 7px;
+    background: #555; border-radius: 50%;
+    animation: typing 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing {
+    0%,60%,100% { transform: translateY(0); background: #555; }
+    30% { transform: translateY(-5px); background: var(--yango-red); }
+  }
+
+  .timestamp {
+    font-size: 10px;
+    color: #444;
+    text-align: center;
+    margin: 4px 0;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #111; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-logo">Y</div>
+  <div class="header-info">
+    <div class="header-title">Yango Driver Support 🇳🇵</div>
+    <div class="header-sub"><div class="status-dot"></div> अनलाइन • सधैं उपलब्ध</div>
+  </div>
+</div>
+
+<!-- Chat Window -->
+<div class="chat-window" id="chatWindow"></div>
+
+<!-- Input -->
+<div class="input-area">
+  <textarea id="userInput" placeholder="आफ्नो प्रश्न यहाँ टाइप गर्नुहोस्..." rows="1" onkeydown="handleKey(event)"></textarea>
+  <button class="send-btn" onclick="handleSend()">➤</button>
+</div>
+
+<script>
+const BOT_DELAY = 900;
+let waitingForResponse = false;
+
+// ─── Knowledge Base ───────────────────────────────────────────────────────────
+const FAQ = [
+  {
+    keywords: ['pro level', 'pro लेभल', 'point cut', 'पोइन्ट', 'कटाउ', 'घट्यो', 'घट्छ', 'deduction', 'reduce'],
+    answer: `<b>Pro Level किन घट्छ?</b> यहाँ मुख्य कारणहरू छन्:\n\n<span class="tag">-१२ पोइन्ट</span> <b>Forced Cancellation</b> — Driver ले Passenger लाई फोन गरेर आफू नजाने, एकै ठाउँमा बस्ने वा उल्टो दिशामा जाने भए।\n\n<span class="tag">-१० पोइन्ट</span> <b>Trip Accept गरेर Cancel</b> — Ride accept गरेपछि cancel गर्दा।\n\n<span class="tag">-७ पोइन्ट</span> <b>Delivery Cancel</b> — Delivery case मा point A मा १० मिनेट कुरेर cancel गर्दा।\n\n<span class="tag">-१/-२/-३ पोइन्ट</span> <b>Trip Skip</b> — Online भएर trip accept नगर्दा।`
+  },
+  {
+    keywords: ['passenger cancel', 'यात्रुले cancel', 'passenger ले cancel', 'passenger cancel गर्यो', 'passenger cancel गर्छ', 'customer cancel'],
+    answer: `⚠️ <b>Passenger ले Cancel गरेपछि Pro Level कट हुन्छ कि?</b>\n\n<span class="bad">हो, हुन सक्छ!</span> यदि Driver ले trip accept गरेपछि:\n\n• <b>४-५ मिनेटसम्म हलचल नगरेको</b> भए\n• वा <b>उल्टो दिशामा गएको</b> भए\n• वा Passenger लाई <b>कुर्न लगाएको</b> भए\n\nतब System ले <span class="bad">Forced Cancellation</span> detect गर्छ र <b>-१२ पोइन्ट</b> काट्छ — <span class="warn">Passenger ले cancel गरेको भए पनि!</span>\n\n<b>✅ समाधान:</b> Trip accept गरेपछि <span class="ok">तुरुन्तै pickup point तर्फ हिँड्नुस्।</span>`
+  },
+  {
+    keywords: ['force cancel', 'forced', 'जबरजस्ती', '-12', 'बाह्र पोइन्ट', '12 point'],
+    answer: `<b>Forced Cancellation के हो?</b>\n\nSystem ले detect गर्छ जब Driver:\n\n• Trip accept गरेर <b>pickup तर्फ नगएको</b>\n• <b>एकै ठाउँमा बसेको</b> (movement नभएको)\n• <b>उल्टो दिशामा</b> गएको\n• Passenger लाई <b>cancel गर्न बाध्य</b> पारेको\n\nनतिजा: <span class="bad">-१२ Pro Level Points</span>\n\n<span class="warn">⚠️ Passenger ले cancel गर्दा पनि यो deduction हुन्छ यदि driver को behavior यस्तो भए!</span>\n\n✅ Trip accept गरेपछि <b>तुरुन्तै move गर्नुस्।</b>`
+  },
+  {
+    keywords: ['trip accept', 'ride accept', 'accept गरेपछि', 'accept गरेर'],
+    answer: `<b>Trip Accept गरेपछि के गर्ने?</b>\n\n✅ <span class="ok">तुरुन्तै pickup point तर्फ जानुस्</span>\n✅ App मा सही status set गर्नुस्\n✅ Passenger को call/message respond गर्नुस्\n\n<span class="bad">❌ नगर्ने:</span>\n• हलचल नगरी बस्ने\n• Passenger लाई cancel गर्न भन्ने\n• Negotiate गर्ने\n\n<span class="warn">याद राख्नुस्: Accept गरेपछि नजाने = System ले Forced Cancel मान्छ = -१२ पोइन्ट</span>`
+  },
+  {
+    keywords: ['10 minute', '१० मिनेट', 'wait', 'कुरेपछि', 'pickup point', 'point a'],
+    answer: `<b>Pickup Point मा कुरेपछि Cancel गर्दा?</b>\n\n📍 <b>Passenger Case:</b> यदि तपाईं <b>Pickup Point (A) मा पुगेर १० मिनेट कुर्नुभयो</b> तर Passenger आएन र Cancel गर्नुभयो भने — <span class="ok">Pro Level नकाटिनु पर्ने हो।</span>\n\n📦 <b>Delivery Case:</b> Point A मा १० मिनेट कुरेर cancel गर्दा पनि नकाटिनु पर्छ।\n\n<span class="warn">⚠️ तर यदि deduction भयो भने:</span>\n→ <b>Fleetroom Support</b> मा Trip ID र details पठाउनुस्।\n→ Screenshot लिनुस् र Ticket ID नोट गर्नुस्।`
+  },
+  {
+    keywords: ['bonus', 'बोनस', 'नआएको', 'नपाएको', 'count भएन', 'goal'],
+    answer: `<b>Bonus Count भएन?</b>\n\nसाधारण कारणहरू:\n\n<span class="tag">Fraud Detected</span> Short/unusual trip patterns\n<span class="tag">Early Termination</span> Trip बीचमा छोडेको\n<span class="tag">Self Order</span> आफैंले order गरेको\n<span class="tag">Same Passenger</span> एउटै passenger बारम्बार\n<span class="tag">Rule Violation</span> Service rules नमान्नु\n\n<b>Referral Bonus:</b>\n• Referred driver Anti-Fraud pass नभए\n• Driver already active थियो\n• Invalid referral code\n\n✅ यदि genuinely bonus छुटेको छ भने <b>Driver's In-App Support</b> मा लेख्नुस्।`
+  },
+  {
+    keywords: ['fraud', 'धोखा', 'afs', 'anti fraud', 'algorithm'],
+    answer: `<b>Anti-Fraud System (AFS) बारे:</b>\n\nYango को AFS <span class="ok">९९% accurate</span> छ।\n\n⚠️ <b>Fraud threshold कहिल्यै share गरिँदैन</b> — यो confidential छ र circumstances अनुसार बदलिन्छ।\n\nAlgorithm बारे speculation नगर्नुस्। यदि तपाईंलाई लाग्छ bonus छुट्यो भने:\n→ <b>Driver's In-App Support</b> मा लेख्नुस्।\n→ Trip ID र details provide गर्नुस्।`
+  },
+  {
+    keywords: ['branding', 'ब्रान्डिङ', 'sticker', 'photo reject', 'फोटो reject'],
+    answer: `<b>Branding Photo Reject भयो?</b>\n\n✅ Check गर्नुस्:\n• YANGO sticker <b>straight line</b> मा छ?\n• अरू sticker नछ?\n• <b>Laminated</b> sticker छ?\n• Vehicle number (नेपाली text) सही छ?\n\n📱 Pro App → Warning Section → Screenshot लिनुस्\n\n❌ <b>Group chat मा report नगर्नुस्!</b>\n→ Fleetroom Support → "Vehicle Photo Check Problem" मा report गर्नुस्।\n\n🔄 Branding Photo check हरेक <b>१० दिनमा</b> हुन्छ।`
+  },
+  {
+    keywords: ['payment', 'पैसा', 'settlement', 'payout', 'khalti', 'withdraw'],
+    answer: `<b>Payment / Payout बारे:</b>\n\n💰 Accumulated bonus <b>$१५० भन्दा बढी</b> भएपछि मात्र payment process हुन्छ।\n\n⏱️ Payment bank account मा <b>५ Business Days</b> भित्र आउँछ।\n\n📱 <b>Instant Payout (Khalti):</b>\n→ Pro App → Money Section → Balance Withdraw गर्नुस्\n\n⚠️ Manual follow-up ले process छिटो हुँदैन।\n\n❓ Treasury सम्पर्क: Fleetroom Support मार्फत।`
+  },
+  {
+    keywords: ['trip allocation', 'ride नआउनु', 'order नआउनु', 'allocation', 'dispatch'],
+    answer: `<b>Trip/Ride किन कम आउँछ?</b>\n\nTrip allocation यी factors मा निर्भर:\n\n<span class="tag">PRO Level</span> <span class="tag">Rating</span> <span class="tag">Branding</span>\n<span class="tag">AR/CR/SH</span> <span class="tag">Purple Zone</span> <span class="tag">Blue Zone</span>\n\n⚠️ Fraud वा Accident restriction भएको भए पनि कम आउन सक्छ।\n\n<span class="warn">Note: Partner को basis मा favoritism हुँदैन।</span>\n\n✅ Pro Level बढाउनुस्, Rating राम्रो राख्नुस्, Branding गर्नुस्।`
+  },
+  {
+    keywords: ['offline', 'अफलाइन', 'skip', 'accept नगर्नु', 'reject'],
+    answer: `<b>Trip Skip / Offline बारे:</b>\n\nYदि Trip लिन मन छैन → <span class="ok">Offline बस्नुस्!</span>\n\n⚠️ <b>Online बसेर Trip accept नगर्नु = Pro Level cut</b>\n• Near pickup → <span class="bad">-३ पोइन्ट</span>\n• Mid distance → <span class="bad">-२ पोइन्ट</span>\n• Far distance → <span class="bad">-१ पोइन्ट</span>\n\n<span class="warn">Long trip (२५ km+) skip गर्दा Pro Level cut हुँदैन।</span>\n\n✅ Online हुँदा सबै trip accept गर्नुस् — Passengers को अनुभव राम्रो बनाउनुस्।`
+  },
+  {
+    keywords: ['rating', 'रेटिङ', 'complaint', 'passenger complaint', 'यात्रु गुनासो'],
+    answer: `<b>Passenger Complaint / Rating घट्यो?</b>\n\nCommon violations:\n\n• <b>फोनमा busy</b> रहनु\n• पानी bottle / charger <b>नराख्नु</b>\n• <b>Door नखोलिदिनु</b>\n• <b>Cancel वा negotiate</b> गर्नु\n\nनतिजा: Priority घट्छ, repeated भए <b>tariff block</b> हुन्छ।\n\n<b>Harassment case:</b> Passenger लाई <span class="ok">In-App Support</span> मार्फत complaint गर्न लगाउनुस् — app बाहिर भएको complaint track हुँदैन।`
+  },
+  {
+    keywords: ['support', 'सपोर्ट', 'contact', 'सम्पर्क', 'help', 'मद्दत', 'कहाँ'],
+    answer: `<b>Support कसरी लिने?</b>\n\n<b>Step 1 →</b> <span class="ok">Fleetroom Support</span> मा खोज्नुस्\n<b>Step 2 →</b> FAQ हेर्नुस्\n<b>Step 3 →</b> Google Form submit गर्नुस् (screenshot + Trip ID सहित)\n\n📧 General: <b>support@yango.com</b>\n📧 Authority cases: <b>requests-nepal@yango-team.com</b>\n\n⚠️ <b>Group chat मा tag गर्ने, voice message पठाउने, बारम्बार call गर्ने</b> — यसले issue deprioritize हुन्छ।`
+  },
+  {
+    keywords: ['phone lost', 'फोन हरायो', 'lost phone', 'passenger phone'],
+    answer: `<b>Passenger को Phone Taxi मा छुट्यो?</b>\n\nPassenger लाई भन्नुस्:\n\n→ <b>In-App Support</b> वा <b>support@yango.com</b> मा contact गर्नुस्\n→ <b>Yango book गरेको phone number</b> provide गर्नुस्\n→ Account restore गरेपछि app बाट पनि report गर्न सकिन्छ।`
+  },
+];
+
+const GREETINGS = ['नमस्ते', 'hello', 'hi', 'नमस्कार', 'हेलो', 'ola', 'hey'];
+const THANKS = ['धन्यवाद', 'thank', 'shukriya', 'आभार', 'ok', 'ठिक', 'बुझे', 'सम्झे'];
+
+const QUICK_REPLIES = [
+  { label: '📉 Pro Level कटौती', key: 'pro level' },
+  { label: '🚗 Passenger Cancel गर्दा', key: 'passenger cancel' },
+  { label: '⏱️ Pickup मा कुरेपछि', key: '10 minute' },
+  { label: '🎯 Bonus नआउनु', key: 'bonus' },
+  { label: '💸 Payment/Payout', key: 'payment' },
+  { label: '🖼️ Branding Photo', key: 'branding' },
+  { label: '📞 Support सम्पर्क', key: 'support' },
+  { label: '🔌 Offline/Skip Trip', key: 'offline' },
+];
+
+// ─── DOM helpers ─────────────────────────────────────────────────────────────
+const chatWindow = document.getElementById('chatWindow');
+
+function scrollBottom() {
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function addTimestamp() {
+  const d = document.createElement('div');
+  d.className = 'timestamp';
+  const now = new Date();
+  d.textContent = now.toLocaleTimeString('ne-NP', { hour: '2-digit', minute: '2-digit' });
+  chatWindow.appendChild(d);
+}
+
+function addBubble(text, role) {
+  const wrap = document.createElement('div');
+  wrap.className = `bubble-wrap ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `avatar ${role}`;
+  avatar.textContent = role === 'bot' ? '🤖' : '👤';
+
+  const bubble = document.createElement('div');
+  bubble.className = `bubble ${role}`;
+  bubble.innerHTML = formatText(text);
+
+  wrap.appendChild(avatar);
+  wrap.appendChild(bubble);
+  chatWindow.appendChild(wrap);
+  scrollBottom();
+  return bubble;
+}
+
+function formatText(text) {
+  return text
+    .replace(/\n/g, '<br>')
+    .replace(/\*(.*?)\*/g, '<b>$1</b>');
+}
+
+function addChips() {
+  const wrap = document.createElement('div');
+  wrap.className = 'chips-wrap';
+  QUICK_REPLIES.forEach(qr => {
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.textContent = qr.label;
+    chip.onclick = () => {
+      removeChips();
+      processUserMessage(qr.key);
+      // Show as user bubble
+      addBubble(qr.label, 'user');
+    };
+    wrap.appendChild(chip);
+  });
+  chatWindow.appendChild(wrap);
+  scrollBottom();
+}
+
+function removeChips() {
+  document.querySelectorAll('.chips-wrap').forEach(e => e.remove());
+}
+
+function showTyping() {
+  const wrap = document.createElement('div');
+  wrap.className = 'bubble-wrap bot';
+  wrap.id = 'typingIndicator';
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar bot';
+  avatar.textContent = '🤖';
+  const t = document.createElement('div');
+  t.className = 'typing';
+  t.innerHTML = '<span></span><span></span><span></span>';
+  wrap.appendChild(avatar);
+  wrap.appendChild(t);
+  chatWindow.appendChild(wrap);
+  scrollBottom();
+}
+
+function hideTyping() {
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+// ─── Response logic ───────────────────────────────────────────────────────────
+function findAnswer(input) {
+  const lower = input.toLowerCase();
+
+  if (GREETINGS.some(g => lower.includes(g))) {
+    return `नमस्ते! 🙏 म Yango Nepal को Driver Support Bot हुँ।\n\nतपाईंको कुनै पनि प्रश्नको जवाफ दिन यहाँ छु। तलका topic मध्ये कुनै छनोट गर्नुस् वा आफ्नै question type गर्नुस्।`;
+  }
+
+  if (THANKS.some(g => lower.includes(g)) && lower.length < 20) {
+    return `खुसी लाग्यो! 😊 अरू कुनै प्रश्न छ भने सोध्नुस्। म सधैं यहाँ छु।`;
+  }
+
+  for (const faq of FAQ) {
+    if (faq.keywords.some(k => lower.includes(k.toLowerCase()))) {
+      return faq.answer;
+    }
+  }
+
+  return `माफ गर्नुस्, मैले यो प्रश्न राम्ररी बुझिनँ। 🙏\n\nकृपया:\n• <b>Fleetroom Support</b> मा खोज्नुस्\n• वा <b>support@yango.com</b> मा email गर्नुस्\n• वा <b>Google Form</b> मार्फत report गर्नुस् (Screenshot + Trip ID सहित)\n\nतलका common topics मा click गर्नुस् 👇`;
+}
+
+function processUserMessage(text) {
+  waitingForResponse = true;
+  showTyping();
+
+  setTimeout(() => {
+    hideTyping();
+    const answer = findAnswer(text);
+    addTimestamp();
+    addBubble(answer, 'bot');
+    addChips();
+    waitingForResponse = false;
+  }, BOT_DELAY);
+}
+
+function handleSend() {
+  if (waitingForResponse) return;
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+  removeChips();
+  addBubble(text, 'user');
+  processUserMessage(text);
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    handleSend();
+  }
+}
+
+// Auto-resize textarea
+document.getElementById('userInput').addEventListener('input', function () {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+});
+
+// ─── Init message ─────────────────────────────────────────────────────────────
+window.onload = () => {
+  addTimestamp();
+  addBubble(`नमस्ते! 🙏 <b>Yango Nepal Driver Support Bot</b> मा स्वागत छ!\n\nम तपाईंको यी विषयमा मद्दत गर्न सक्छु:\n\n• Pro Level किन घट्छ?\n• Passenger ले cancel गर्दा के हुन्छ?\n• Bonus किन आएन?\n• Payment र Payout\n• Branding Photo issues\n• र अरू धेरै...\n\n👇 तलका buttons मा click गर्नुस् वा आफ्नो प्रश्न type गर्नुस्!`, 'bot');
+  addChips();
+};
+</script>
+</body>
+</html>
